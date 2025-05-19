@@ -1,0 +1,113 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "whatxtract"
+description = "Extract and verify WhatsApp contact numbers via WhatsApp Web using an automation-powered Python toolkit."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+keywords = [
+  "WhatsApp",
+  "WhatsApp Extractor",
+  "WhatsApp Number Checker",
+  "WhatsApp Validator",
+  "WhatsApp Automation",
+  "Contacts Extractor",
+  "WhatsApp User Checker",
+  "WhatsApp Web Scraper"
+]
+authors = [
+  { name = "Hasan Rasel", email = "rrss.mahmud@gmail.com" }
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Communications :: Chat",
+  "Topic :: Communications :: Telephony",
+  "Topic :: Internet :: WWW/HTTP :: Browsers",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "License :: Other/Proprietary License"
+]
+dependencies = [
+  "selenium",
+  "undetected-chromedriver"
+]
+dynamic = ["version"]
+
+[project.scripts]
+whatschecker = "whatxtract.wa_web:main"
+
+[project.urls]
+Homepage = "https://github.com/bitbytelab/whatxtract"
+Issues = "https://github.com/bitbytelab/whatxtract/issues"
+
+[tool.hatch.version]
+path = "whatxtract/constants.py"
+source = "code"
+
+[tool.hatch.build.targets.wheel]
+packages = ["whatxtract"]
+exclude = [
+  "docs*",
+  "tests*",
+  "dist*",
+  "local*",
+  "whatxtract.egg-info*",
+  ".venv*",
+  ".run*",
+  "whatxtract/logs*"
+]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 88
+indent-width = 4
+preview = true  # enables ruff formatter
+
+# Enable useful linting rules
+select = [
+  "E",    # pycodestyle errors
+  "F",    # pyflakes
+  "I",    # isort-compatible import sorting
+  "UP",   # pyupgrade
+  "B",    # bugbear - common bugs
+  "SIM",  # simplify
+  "C4",   # comprehensions
+  "TID",  # tidy imports
+  "N",    # pep8-naming
+  "PIE"   # misc lints
+]
+
+# ignore = ["E501"] # Example: ignore long lines
+
+[tool.ruff.isort]
+combine-as-imports = true
+known-first-party = ["whatxtract"]
+force-single-line = false
+
+[tool.ruff.format]
+quote-style = "preserve"
+skip-magic-trailing-comma = false
+docstring-code-format = true
+
+[tool.hatch.envs.default.dependencies]
+ruff = "^0.11.10"
+
+# ruff usage
+# Lint and check issues
+# hatch run ruff check .
+
+# Auto-fix linting and imports
+# hatch run ruff check . --fix
+
+# Format code (like black + isort)
+# hatch run ruff format .
+
+
