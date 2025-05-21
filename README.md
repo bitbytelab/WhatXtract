@@ -23,9 +23,9 @@
   </p>
 
   <p>
-    <img src="https://img.shields.io/github/v/release/bitbytelab/whatxtract?style=flat-square" alt="GitHub Release Badge" />
-    <img src="https://img.shields.io/badge/license-Proprietary-red?style=flat-square" alt="License Badge" />
-    <img src="https://img.shields.io/pypi/pyversions/whatxtract?style=flat-square" alt="Python Version" />
+    <!--- <img src="https://img.shields.io/github/v/release/bitbytelab/whatxtract?style=flat-square" alt="GitHub Release Badge" /> --->
+    <img src="https://img.shields.io/badge/license-MIT-red?style=flat-square" alt="License Badge" />
+    <img src="https://img.shields.io/pypi/pyversions/py312?style=flat-square" alt="Python Version" />
     <img src="https://img.shields.io/badge/status-Beta-orange?style=flat-square" alt="Project Status" />
     <img src="https://img.shields.io/pypi/dm/whatxtract?style=flat-square" alt="PyPI Downloads" />
     <img src="https://img.shields.io/github/languages/top/bitbytelab/whatxtract?style=flat-square" alt="Top Language" />
@@ -224,8 +224,37 @@ A: Yes! MIT licensed. Use it responsibly and contribute back.
 
 ---
 
-## 👨‍💻 Author
+Here’s a clean and friendly **Contribution** section you can add to your `README.md`:
 
+---
+
+## 🤝 Contribution
+
+Contributions are welcome and appreciated!
+
+* Feel free to **submit pull requests (PRs)** to improve features, fix bugs, or enhance documentation.
+* Please ensure your code follows standard conventions and is well-tested where applicable.
+* If you're planning a major change, consider opening an issue first to discuss it.
+
+Let’s make this project better together! 💡
+
+---
+
+## ⚠️ Disclaimer
+
+This tool is provided **for educational and research purposes only**.
+
+* **Use at your own risk.**
+* The author is **not responsible** for any misuse, damages, or consequences arising from the use of this tool.
+* Automated or excessive interaction with WhatsApp services **may violate their Terms of Service** and **can lead to account bans or other penalties**.
+* By using this tool, you agree that you understand the risks and take **full responsibility** for any outcomes.
+
+> Always respect the platforms you interact with. This project is not affiliated with, endorsed by, or associated with WhatsApp or Meta in any way.
+
+---
+
+## 👨‍💻 Author
+[Hasan Rasel](https://github.com/rsmahmud)  
 Made with ❤️ by [BitByteLab](https://github.com/bitbytelab)  
 📧 Contact: [bbytelab@gmail.com](mailto:bbytelab@gmail.com)
 
