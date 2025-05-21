@@ -162,14 +162,20 @@ cython_debug/
 
 # PyCharm - JetBrains
 .idea/
+.run/
 
 # Ruff stuff:
 .ruff_cache/
 
 # PyPI configuration file
 .pypirc
-/local/Profiles/
+
+# Additonal
 /local/
-/whatxtract/whatxtract_logs/
-/whatxtract/.last_dep_check
+/local/*
 /whatxtract/WAProfiles/
+/whatxtract/.last_dep_check
+/whatxtract/whatxtract_logs/
+/whatxtract/logs/
+/whatxtract/output/
+

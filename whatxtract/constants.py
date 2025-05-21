@@ -1,26 +1,6 @@
-"""
-whatxtract: WhatsApp data extraction and automation toolkit.
- description="WhatsApp Contacts Extractor and Number Checker via WhatsApp Web"
- A WhatsApp data extraction and automation toolkit
+"""Constants for the whatxtract package."""
 
-Author: Hasan Rasel
-Email: rrss.mahmud@gmail.com
-License: MIT
-Version: 0.1.0
-"""
-
-__title__       = "whatxtract"
-__package__     = "whatxtract"
-__description__ = "A WhatsApp data extraction and automation toolkit"
-__version__     = "0.1.0"
-__author__      = "Hasan Rasel"
-__email__       = "rrss.mahmud@gmail.com"
-__license__     = "MIT"
-__url__         = "https://github.com/rsmahmud/whatxtract"
-__copyright__   = "2025 Hasan Rasel"
-
-
-import logging
+# fmt: off
 from pathlib import Path
 
 try:
@@ -33,33 +13,70 @@ except ImportError:
     from selenium.webdriver.common.by import By
 
 
-DEFAULT_WAIT    = 30
+DEFAULT_WAIT                = 30
+VCF_BATCH_SIZE              = 5000
 
-LOG_LEVEL       = logging.DEBUG
+PROFILE_DIR                 = Path.cwd() / 'WAProfiles'
+OUTPUT_DIR                  = Path.cwd() / 'output'
+VCF_DIR                     = OUTPUT_DIR / 'vcf_contacts'
+WAMS_DB_PATH                = OUTPUT_DIR / 'wams_db.json'
 
-LOG_DIR         = Path.cwd() / 'logs'
-LOG_DIR.mkdir(parents=True, exist_ok=True)
-LOG_FILE        = LOG_DIR / __package__ + '.log'
-LOG_FORMAT      = '[%(asctime)s] %(levelname)s - %(message)s'
+APP__DIV                                    = (By.ID, 'app')
+INITIAL_STARTUP__DIV                        = (By.ID, 'wa_web_initial_startup')
+LOGIN_QR_CODE__DIV                          = (By.CSS_SELECTOR, 'div[data-ref]')
+LOG_INTO_WA_WEB__TEXT                       = (By.XPATH, '//div[contains(text(), "Log into WhatsApp Web")]')
+LOGIN_QR_SCAN_ME__CANVAS                    = (By.XPATH, '//canvas[@aria-label="Scan me!"]')
+MAIN_NAV_BAR__DIV                           = (By.CSS_SELECTOR, '[data-js-navbar="true"]')
+MAIN_SEARCH_BAR__SEARCH_BOX                 = (By.CSS_SELECTOR, 'div[contenteditable="true"][role="textbox"]')
+MAIN_SEARCH_BAR__SEARCH_ICON                = (By.CSS_SELECTOR, '#side span[data-icon="search"]')
+LOADING__TEXTS                              = ('End-to-end encrypted', 'Your messages are downloading')
+INVALID_NUMBER__DIV                         = (By.XPATH, "//div[contains(text(), 'number shared via url is invalid')]")
+NEW_CHAT__BUTTON                            = (By.CSS_SELECTOR, 'button[role="button"][title="New chat"]')
+CONTACTS_CONTAINER_PARENT__DIV              = (By.CSS_SELECTOR, 'div.copyable-area')
+CONTACTS_CONTAINER__DIV                     = (By.CSS_SELECTOR, 'div[data-tab="4"]')
+CONTACT_ITEM__DIV                           = (By.CSS_SELECTOR, 'div[role="listitem"]')
+BUTTON_ROLE__DIV                            = (By.CSS_SELECTOR, 'div[role="button"]')
+CONTACT_INFO__SPAN                          = (By.CSS_SELECTOR, 'span[dir="auto"]')
+CONTACT_AVATAR__IMG                         = (By.CSS_SELECTOR, 'img[draggable="false"]')
+CONTACT_AVATAR__DEFAULT                     = (By.CSS_SELECTOR, 'span[data-icon="default-user"] svg')
+CHAT_LIST_PARENT = PANE_SIDE__DIV           = (By.ID, 'pane-side')
+CHAT_LIST__DIV                              = (By.CSS_SELECTOR, 'div[role="grid"][aria-label="Chat list"]')
 
-PROFILE_DIR     = Path.cwd() / 'WAProfiles'
-PROFILE_DIR.mkdir(parents=True, exist_ok=True)
 
-OUTPUT_DIR      = Path.cwd() / 'output'
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-WAMS_DB_PATH    = OUTPUT_DIR / 'wams_db.json'
+class SELECTORS:
+    """Selectors for Selenium."""
+    APP__DIV = APP__DIV
+    INITIAL_STARTUP__DIV = INITIAL_STARTUP__DIV
+    LOGIN_QR_CODE__DIV = LOGIN_QR_CODE__DIV
+    LOG_INTO_WA_WEB__TEXT = LOG_INTO_WA_WEB__TEXT
+    LOGIN_QR_SCAN_ME__CANVAS = LOGIN_QR_SCAN_ME__CANVAS
+    MAIN_NAV_BAR__DIV = MAIN_NAV_BAR__DIV
+    MAIN_SEARCH_BAR__SEARCH_BOX = MAIN_SEARCH_BAR__SEARCH_BOX
+    MAIN_SEARCH_BAR__SEARCH_ICON = MAIN_SEARCH_BAR__SEARCH_ICON
+    LOADING__TEXTS = LOADING__TEXTS
+    INVALID_NUMBER__DIV = INVALID_NUMBER__DIV
+    NEW_CHAT__BUTTON = NEW_CHAT__BUTTON
+    CONTACTS_CONTAINER_PARENT__DIV = CONTACTS_CONTAINER_PARENT__DIV
+    CONTACTS_CONTAINER__DIV = CONTACTS_CONTAINER__DIV
+    CONTACT_ITEM__DIV = CONTACT_ITEM__DIV
+    BUTTON_ROLE__DIV = BUTTON_ROLE__DIV
+    CONTACT_INFO__SPAN = CONTACT_INFO__SPAN
+    CONTACT_AVATAR__IMG = CONTACT_AVATAR__IMG
+    CONTACT_AVATAR__DEFAULT = CONTACT_AVATAR__DEFAULT
+    CHAT_LIST_PARENT = CHAT_LIST_PARENT
+    PANE_SIDE__DIV = PANE_SIDE__DIV
+    CHAT_LIST__DIV = CHAT_LIST__DIV
 
 
-# Selector for Selenium
-LOGIN_QR_CODE                   = (By.CSS_SELECTOR, 'div[data-ref]')
-LOG_INTO_WA_WEB__TEXT           = (By.XPATH, '//div[contains(text(), "Log into WhatsApp Web")]')
-MAIN_NAV_BAR                    = (By.CSS_SELECTOR, '[data-js-navbar="true"]')
-MAIN_SEARCH_BAR__SEARCH_BOX     = (By.CSS_SELECTOR, 'div[contenteditable="true"][role="textbox"]')
-MAIN_SEARCH_BAR__SEARCH_ICON    = (By.CSS_SELECTOR, '#side span[data-icon="search"]')
-LOGIN_QR_CANVAS__SCAN_ME        = (By.XPATH, '//canvas[@aria-label="Scan me!"]')
+VCF_TEMPLATE = """BEGIN:VCARD
+VERSION:3.0
+N:{last};{first};;;
+FN:{full}
+TEL;TYPE=CELL:{tel}
+END:VCARD"""
 
 
-INDEXEDDB_SNAPSHOT_HELPERS = """
+INDEXEDDB_HELPERS = """
 function getResultFromRequest(req) {
     return new Promise((resolve, reject) => {
         req.onsuccess = () => resolve(req.result);
@@ -76,7 +93,7 @@ function openDB(name) {
 }
 """
 
-EXPORT_SNAPSHOT_SCRIPT = INDEXEDDB_SNAPSHOT_HELPERS + """
+INDEXEDDB_EXPORT_SCRIPT = INDEXEDDB_HELPERS + """
 const callback = arguments[arguments.length - 1];
 const delay = ms => new Promise(res => setTimeout(res, ms));
 (async () => {

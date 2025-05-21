@@ -1,13 +1,14 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools >= 76", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "whatxtract"
 description = "Extract and verify WhatsApp contact numbers via WhatsApp Web using an automation-powered Python toolkit."
 readme = "README.md"
-requires-python = ">=3.9"
-license = { file = "LICENSE" }
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
 keywords = [
   "WhatsApp",
   "WhatsApp Extractor",
@@ -33,81 +34,101 @@ classifiers = [
   "Topic :: Communications :: Telephony",
   "Topic :: Internet :: WWW/HTTP :: Browsers",
   "Topic :: Software Development :: Libraries :: Python Modules",
-  "License :: Other/Proprietary License"
 ]
 dependencies = [
+  "tqdm",
+  "colorlog",
   "selenium",
-  "undetected-chromedriver"
+  "undetected-chromedriver",
 ]
 dynamic = ["version"]
 
 [project.scripts]
-whatschecker = "whatxtract.wa_web:main"
+whatxtract = "whatxtract.wa_web:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "whatxtract.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["whatxtract*"]
+exclude = [
+  "docs*", "tests*", "local*", "dist*", "whatxtract.egg-info*", ".venv*", ".run*",
+  "/whatxtract/WAProfiles/",
+  "/whatxtract/.last_dep_check",
+  "/whatxtract/whatxtract_logs/",
+  "/whatxtract/logs/",
+  "/whatxtract/output/"
+]
 
 [project.urls]
-Homepage = "https://github.com/bitbytelab/whatxtract"
-Issues = "https://github.com/bitbytelab/whatxtract/issues"
-
-[tool.hatch.version]
-path = "whatxtract/constants.py"
-source = "code"
-
-[tool.hatch.build.targets.wheel]
-packages = ["whatxtract"]
-exclude = [
-  "docs*",
-  "tests*",
-  "dist*",
-  "local*",
-  "whatxtract.egg-info*",
-  ".venv*",
-  ".run*",
-  "whatxtract/logs*"
-]
+Homepage = "https://github.com/bitbytelab/WhatXtract"
+Issues = "https://github.com/bitbytelab/WhatXtract/issues"
 
 [tool.ruff]
-target-version = "py39"
-line-length = 88
-indent-width = 4
-preview = true  # enables ruff formatter
-
-# Enable useful linting rules
-select = [
-  "E",    # pycodestyle errors
-  "F",    # pyflakes
-  "I",    # isort-compatible import sorting
-  "UP",   # pyupgrade
-  "B",    # bugbear - common bugs
-  "SIM",  # simplify
-  "C4",   # comprehensions
-  "TID",  # tidy imports
-  "N",    # pep8-naming
-  "PIE"   # misc lints
+builtins = ["_"]
+extend-exclude = [
+    ".run", "__pycache__", "build",
+    ".ruff_cache", ".pytest_cache"
 ]
-
-# ignore = ["E501"] # Example: ignore long lines
-
-[tool.ruff.isort]
-combine-as-imports = true
-known-first-party = ["whatxtract"]
-force-single-line = false
+fix = true
+force-exclude = true
+indent-width = 4
+line-length = 120
+show-fixes = true
+target-version = "py312"
+unsafe-fixes = true
 
 [tool.ruff.format]
-quote-style = "preserve"
-skip-magic-trailing-comma = false
+quote-style = "single"
 docstring-code-format = true
 
-[tool.hatch.envs.default.dependencies]
-ruff = "^0.11.10"
+[tool.ruff.lint]
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+logger-objects = ["logging_setup.logger"]
+unfixable = []
+select = [
+  "E",      # pycodestyle: code formatting
+  "F",      # pyflakes: undefined vars, unused imports
+  "B",      # bugbear: common bugs and anti patterns
+  "I",      # import sorting (built-in, replaces isort)
+  "N",      # pep8-naming: function/class naming
+  "D",      # pydocstyle: docstring format
+  "UP",     # pyupgrade: modernize Python syntax
+  "C4",     # flake8-comprehensions: simplify comprehensions
+  "SIM",    # flake8-simplify: remove redundant code
+  "TID",    # tidy imports: disallow relative imports
+  "RUF",    # Ruff-native: performance, cleanup
+]
+ignore = [
+  # "B013", # A length-one tuple literal is redundant in exception handlers (already commented out)
+  "D105",   # Missing docstring in magic methods like __init__, __str__, etc.
+  "D205",   # 1 blank line required between summary line and description in docstrings
+  "D212",   # Multi-line docstring summary should start at the first line
+  "N812",   # Lowercase imported as non-lowercase (e.g., `import mymodule as MyModule`)
+]
 
-# ruff usage
-# Lint and check issues
-# hatch run ruff check .
+[tool.ruff.lint.extend-per-file-ignores]
+"__init__.py" = ["E402"]
 
-# Auto-fix linting and imports
-# hatch run ruff check . --fix
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = true
 
-# Format code (like black + isort)
-# hatch run ruff format .
+[tool.ruff.lint.isort]
+length-sort = true
+order-by-type = true
+force-single-line = false
+combine-as-imports = true
+known-first-party = ["whatxtract"]      # package name
+section-order = [                       # Import section order
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
 
+[tool.ruff.lint.pep8-naming]
+ignore-names = ["foo", "bar"]
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"

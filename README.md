@@ -35,30 +35,6 @@
   </p>
 </div>
 
-
-<div align="center">
-  <img src="assets/logo.png" alt="WhatsChecker Logo" height="150"/>
-  <h1 align="center">WhatXtract</h1>
-
-  <p>
-    🕵️‍♂️ A powerful multithreaded CLI tool to <strong>check WhatsApp number validity</strong> via WhatsApp Web.
-  </p>
-
-  <p>
-    Whatxtract is a powerful and easy-to-use WhatsApp data extraction and automation toolkit built in Python. It allows you to extract, verify, and validate contact numbers directly through WhatsApp Web — without using the official API. Designed for developers, marketers, and analysts, Whatxtract automates WhatsApp web sessions using Selenium and undetected-chromedriver, helping you check which numbers are active WhatsApp users and gather contact data efficiently.
-
-    Whether you're verifying leads, cleaning up phone number lists, or building your own WhatsApp automation workflows, Whatxtract streamlines the process securely and reliably.
-  </p>
-
-  <p>
-    <img src="https://img.shields.io/badge/version-0.0.1-blue?style=flat-square" alt="Version Badge" />
-    <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License Badge" />
-    <img src="https://img.shields.io/badge/python-3.9%2B-yellow?style=flat-square" alt="Python Badge" />
-    <img src="https://img.shields.io/badge/status-beta-orange?style=flat-square" alt="Status Badge" />
-    <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff" style="max-width:100%;"></a>
-  </p>
-</div>
-
 ---
 
 ## 🌟 Features
@@ -77,12 +53,29 @@
 
 ---
 
+## 📦 How It Works
+
+WhatXtract uses a multistep pipeline to extract valid WhatsApp users from your own contact list in a semi or fully-automated fashion:
+
+1. **Prepare a `.txt` file** with phone numbers — one per line.
+2. **WhatXtract converts this into a `.vcf` file** of ~5000 contacts per batch.
+3. **Import the `.vcf` file to your WhatsApp installed Phone**.
+4. **Launch WhatsApp and wait for sync.**
+5. **Extracts relevant `stores` from WhatsApp IndexedDB**.
+6. **Parses contacts** to extract name and number of valid users.
+7. **Exports to a timestamped CSV file.**
+
+> ℹ️ All the above steps can be performed automatically in sequence. <br>
+> For now perform Step 3 and 4 manually.
+
+---
+
 ## 🚀 Usage
 
 ### 1. 📦 Installation
 
 ```bash
-git clone https://github.com/bitbytelab/WhatsChecker.git
+git clone https://github.com/bitbytelab/WhatXtract.git
 cd WhatXtract
 chmod +x whatxtract.py
 ```
@@ -193,8 +186,8 @@ Then just run:
 Saved WhatsApp sessions are stored in:
 
 ```bash
-./Profiles/account1
-./Profiles/account2
+./WAProfiles/account1
+./WAProfiles/account2
 ...
 ```
 
@@ -209,6 +202,15 @@ Remove a folder to reset that session.
 - [selenium](https://pypi.org/project/selenium)
 
 📦 Auto-installs on first run if not found!
+
+---
+
+## 📂 Folder Structure
+
+<!-- START FOLDER STRUCTURE -->
+
+
+<!-- END FOLDER STRUCTURE -->
 
 ---
 
@@ -238,4 +240,4 @@ MIT License – see [LICENSE](LICENSE) file for details.
 ## ⭐️ Star this project
 
 If you find this useful, please consider starring the repo!  
-👉 [github.com/bitbytelab/WhatsChecker](https://github.com/bitbytelab/WhatsChecker)
+👉 [github.com/bitbytelab/WhatXtract](https://github.com/bitbytelab/WhatXtract)

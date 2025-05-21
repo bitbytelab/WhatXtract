@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
+"""Entry point for the CLI."""
 
-from wa_web import main
+import sys
 
-main()
+from whatxtract.wa_web import main
+
+try:
+    main()
+except KeyboardInterrupt:
+    print('\n[!] Interrupted by user (Ctrl+C). Exiting gracefully.')
+    sys.exit(0)
