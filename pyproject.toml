@@ -4,6 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "whatxtract"
+authors = [
+  { name = "Hasan Rasel", email = "rrss.mahmud@gmail.com" }
+]
 description = "Extract and verify WhatsApp contact numbers via WhatsApp Web using an automation-powered Python toolkit."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -18,9 +21,6 @@ keywords = [
   "Contacts Extractor",
   "WhatsApp User Checker",
   "WhatsApp Web Scraper"
-]
-authors = [
-  { name = "Hasan Rasel", email = "rrss.mahmud@gmail.com" }
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -54,11 +54,11 @@ version = {attr = "whatxtract.__version__"}
 include = ["whatxtract*"]
 exclude = [
   "docs*", "tests*", "local*", "dist*", "whatxtract.egg-info*", ".venv*", ".run*",
-  "/whatxtract/WAProfiles/",
-  "/whatxtract/.last_dep_check",
-  "/whatxtract/whatxtract_logs/",
-  "/whatxtract/logs/",
-  "/whatxtract/output/"
+  "whatxtract/WAProfiles/",
+  "whatxtract/.last_dep_check",
+  "whatxtract/whatxtract_logs/",
+  "whatxtract/logs/",
+  "whatxtract/output/"
 ]
 
 [project.urls]
