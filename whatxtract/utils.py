@@ -10,6 +10,8 @@ from pathlib import Path
 from datetime import datetime
 from functools import wraps
 
+from faker import Faker
+
 from whatxtract.constants import VCF_DIR, OUTPUT_DIR, VCF_TEMPLATE, WAMS_DB_PATH, VCF_BATCH_SIZE
 from whatxtract.logging_setup import logger
 
@@ -31,6 +33,12 @@ class DotDict(dict):
             del self[key]
         except KeyError:
             raise AttributeError(f'No such attribute: {key}') from Exception
+
+
+class DummyError(Exception):
+    """Used only to trick linters, never raised."""
+
+    pass
 
 
 def timed(func):
@@ -190,7 +198,7 @@ def extract_chat_list_from_json_db(db_path=WAMS_DB_PATH, output_file=OUTPUT_DIR 
         # Extract only id and name
         data_list = snapshot_data['chat']
 
-        logger.info('Total chats:', len(data_list))
+        logger.info(f'Total chats: {len(data_list)}')
         for i, data in enumerate(data_list, 1):
             logger.debug(f'[{i:03}] {data["id"].split("@")[0]:<15} {data["name"]}')
 
@@ -216,28 +224,22 @@ def extract_contacts_from_json_db(db_path=WAMS_DB_PATH, output_file=OUTPUT_DIR /
         data_list = db_data['contact']
         data_list = [x for x in data_list if x.get('isAddressBookContact') and x.get('phoneNumber')]
         logger.info('Total Contacts:', len(data_list))
-        for i, data in enumerate(data_list, 1):
-            logger.debug(f'[{i:^3}] {data}')
-            # logger.debug(
-            #     f"[{i:03}] "
-            #     f"{data['id']:<18} "
-            #     f"{data.get('phoneNumber','PN'):<15} "
-            #     f"{data.get('name','name'):<20} "
-            #     f"{data.get('pushname','pushname'):<20}"
-            # )
+        for i, d in enumerate(data_list, 1):
+            logger.debug(
+                f'[{i:^3}] {d["id"]:<20} '
+                f'{d.get("phoneNumber", "PN"):<15} '
+                f'{d.get("name", "name"):<20} '
+                f'{d.get("pushname", "pushname"):<20}'
+            )
 
         headers = ['id', 'name', 'shortName', 'phoneNumber']
-
-        export_data_list = []
-        for d in data_list:
-            export_data_list.append({k: d.get(k, '') for k in headers})
-
+        export_data_list = [{k: d.get(k, '') for k in headers} for d in data_list]
         with output_file.open('w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=headers)
             writer.writeheader()
             writer.writerows(export_data_list)
 
-            logger.info(f'Extracted {len(export_data_list)} contacts. saved to: {output_file}')
+            logger.info(f'Extracted {len(export_data_list)} contacts. Saved to: {output_file}')
 
 
 def generate_vcf_batches(input_file: str, batch_size: int = VCF_BATCH_SIZE) -> list[Path]:
@@ -257,14 +259,17 @@ def generate_vcf_batches(input_file: str, batch_size: int = VCF_BATCH_SIZE) -> l
     numbers = read_numbers_from_txt(input_file)
     logger.info(f'Loaded {len(numbers)} numbers. Generating VCF batches...')
 
-    chunks = chunk_list(numbers, batch_size)
+    fake = Faker()
     generated_files = []
+    chunks = chunk_list(numbers, batch_size)
     for i, chunk in enumerate(chunks, start=1):
+        fn = fake.first_name()
+        ln = fake.last_name()
         vcf_content = '\n'.join(
             VCF_TEMPLATE.format(
-                first=number,
-                last=f'batch_{i}',
-                full=f'{number} batch_{i}',
+                first=fn,
+                last=ln,
+                full=f'{fn} {ln}',
                 tel=f'+1 {number}' if len(number) == 10 else number,
             )
             for number in chunk

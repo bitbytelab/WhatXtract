@@ -37,6 +37,7 @@ classifiers = [
 ]
 dependencies = [
   "tqdm",
+  "faker",
   "colorlog",
   "selenium",
   "undetected-chromedriver",
@@ -100,7 +101,7 @@ select = [
   "RUF",    # Ruff-native: performance, cleanup
 ]
 ignore = [
-  # "B013", # A length-one tuple literal is redundant in exception handlers (already commented out)
+  # "B013", # redundant-tuple-in-exception-handler
   "D105",   # Missing docstring in magic methods like __init__, __str__, etc.
   "D205",   # 1 blank line required between summary line and description in docstrings
   "D212",   # Multi-line docstring summary should start at the first line

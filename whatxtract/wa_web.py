@@ -30,6 +30,7 @@ else:
 from whatxtract import utils, constants
 from whatxtract.utils import (
     DotDict,
+    DummyError,
     timed,
     chunk_list,
     get_digits,
@@ -41,6 +42,7 @@ from whatxtract.utils import (
     read_numbers_from_txt,
     timestamped_output_path,
     extract_contacts_from_json_db,
+    extract_chat_list_from_json_db,
 )
 from whatxtract.constants import (
     APP__DIV,
@@ -56,15 +58,12 @@ from whatxtract.constants import (
     CONTACT_ITEM__DIV,
     MAIN_NAV_BAR__DIV,
     CONTACT_INFO__SPAN,
-    LOGIN_QR_CODE__DIV,
     CONTACT_AVATAR__IMG,
     INVALID_NUMBER__DIV,
     INITIAL_STARTUP__DIV,
-    LOG_INTO_WA_WEB__TEXT,
     CONTACT_AVATAR__DEFAULT,
     CONTACTS_CONTAINER__DIV,
     INDEXEDDB_EXPORT_SCRIPT,
-    LOGIN_QR_SCAN_ME__CANVAS,
     MAIN_SEARCH_BAR__SEARCH_BOX,
     MAIN_SEARCH_BAR__SEARCH_ICON,
     CONTACTS_CONTAINER_PARENT__DIV,
@@ -102,7 +101,7 @@ class WhatsAppBot:
         self.class_name = self.__class__.__name__
         self.id = self.identifier = f'[W~{_id}]'
         self.id_full = self.full_id = f'<{self.class_name} {self.id}>'
-        logger.debug(f'[ + ] Initializing instance: {self.id}')
+        logger.debug(f'{self.id} Instance initialized.')
 
     def __enter__(self):
         logger.debug(f'{self} Entering context manager')
@@ -115,10 +114,10 @@ class WhatsAppBot:
         try:
             self.quit()
         except (Exception, WebDriverException) as e:
-            logger.error(f'{self} Exception occurred while quitting the driver: {e}')
+            logger.error(f'{self} [x] Exception occurred while quitting the driver: {e}')
 
         if exc_type:
-            logger.error(f'{self} Exception: {exc_val}')
+            logger.error(f'{self} [x] Exception: {exc_val}')
 
         return False  # Return False to propagate exceptions, True to suppress
 
@@ -130,6 +129,7 @@ class WhatsAppBot:
 
     # 2. Static and class methods (optional)
     @classmethod
+    @timed
     def add_account(cls, args, _id: int | str = 1):
         """Add a new WhatsApp account via QR."""
         logger.info('[+] Add new WhatsApp account via QR')
@@ -137,235 +137,29 @@ class WhatsAppBot:
             bot.login()
 
     @classmethod
-    def check_numbers(cls, numbers: list[str], args, thread_id: int | str = 1):
-        """Check a list of WhatsApp numbers for active status."""
+    @timed
+    def run(cls, args, thread_id: int | str = 1):
+        """Run the bot."""
+        logger.info(f'[W~{thread_id}] Running {cls.__name__}')
         with cls(args, headless=args.headless, _id=thread_id) as bot:
             if bot.login():
-                logger.info(f'[!] {bot} Starting checking: {len(numbers)} numbers')
-                bot.driver.set_window_size(1200, 800)
-
-                if args.headless:
-                    bot.driver.maximize_window()
-
-                for i, number in enumerate(numbers, 1):
-                    logger.info(f'{bot} [{i}/{len(numbers)}] Checking: {number}')
-                    result = bot.check_number(number)
-                    if result is True:
-                        logger.info(f'[✓] {bot} ACTIVE: {number}')
-                        filename = 'checked_valid_numbers'
-                        filename = timestamped_output_path(str(OUTPUT_DIR), filename, ext='txt', fmt='%Y_%m_%d')
-                        append_to_file(str(filename), number)
-                    elif result is False:
-                        logger.info(f'[-] {bot} INACTIVE: {number}')
-                        filename = 'checked_invalid_numbers'
-                        filename = timestamped_output_path(str(OUTPUT_DIR), filename, ext='txt', fmt='%Y_%m_%d')
-                        append_to_file(str(filename), number)
-                    else:
-                        logger.info(f'[!] {bot} SKIPPED: {number}')
-                        filename = 'check_skipped_numbers'
-                        filename = timestamped_output_path(str(OUTPUT_DIR), filename, ext='txt', fmt='%Y_%m_%d')
-                        append_to_file(str(filename), number)
-
-                    delay = args.delay + random.randint(0, 10)
-                    logger.info(f'[{bot.id}] Waiting for {delay} seconds')
-                    time.sleep(delay)
-
-                logger.info(f'{bot} Done checking: {len(numbers)}.')
+                if args.extract:
+                    if args.mode in ['web-db', 'all']:
+                        size_kb = bot.export_wa_db(db_name=args.db_name, timeout=10, min_size_kb=10, max_attempts=3)
+                        if not size_kb:
+                            logger.error(f'{bot} [x] Failed to export WhatsApp IndexedDB.')
+                    if args.contact_list or args.mode in ['web-db', 'all']:
+                        bot.extract_contacts_from_wams_db()
+                    if args.chat_list or args.mode in ['web-db', 'all']:
+                        bot.extract_chat_list_from_wams_db()
+                    if args.contact_list or args.mode in ['web-scrape', 'all']:
+                        bot.scrape_contact_list()
+                    if args.chat_list or args.mode in ['web-scrape', 'all']:
+                        bot.scrape_chat_list_contacts()
+                if args.check:
+                    bot.check_numbers(args.numbers, base_delay=args.delay)
             else:
-                logger.warning(f'[-] {bot} Failed to login.')
-
-    @classmethod
-    def extract_contacts_from_wams_db(cls, args, thread_id: int | str = 1):
-        """Extract contacts from WhatsAppWeb IndexedDB."""
-        with cls(args, headless=args.headless, _id=thread_id) as bot:
-            if bot.login():
-                logger.info(f'[!] {bot} Starting contacts extraction from wams db')
-                size_kb = bot._export_wams_db()
-                if size_kb < 50:
-                    logger.error(f'[x] {bot} Failed to export wams db. Size too small: {size_kb}KB')
-                    logger.info(f'[x] {bot} Starting second export attempt after 10 seconds')
-                    time.sleep(10)
-                    size_kb = bot._export_wams_db()
-                    if size_kb < 50:
-                        logger.error(f'[x] {bot} Attempt-2 failed to export wams db. Size too small: {size_kb}KB')
-
-                # attempt to extract contacts from exported db even if size too small
-                filename = timestamped_output_path(str(OUTPUT_DIR), 'extracted_contacts', '.csv')
-                extract_contacts_from_json_db(WAMS_DB_PATH, filename)
-            else:
-                logger.error(f'[x] {bot} Failed to login.')
-
-    @classmethod
-    def extract_contacts_by_scraping(cls, args, thread_id: int | str = 1):
-        """Extract WhatsApp contacts from the contact list sidebar by screen-scraping the UI."""
-        with cls(args, headless=args.headless, _id=thread_id) as bot:
-            if bot.login():
-                logger.info(f'[!] {bot} Starting contacts extraction by screen-scraping')
-                wait = WebDriverWait(bot.driver, DEFAULT_WAIT)
-
-                new_chat_btn = wait.until(EC.element_to_be_clickable(NEW_CHAT__BUTTON))
-                new_chat_btn.click()
-                logger.debug(f'[!] {bot} Opened the contact list sidebar.')
-
-                # contact list
-                copyable_area = wait.until(EC.presence_of_element_located(CONTACTS_CONTAINER_PARENT__DIV))
-                contacts_container = copyable_area.find_element(CONTACTS_CONTAINER__DIV)
-
-                seen_items = set()
-                contacts_data = []
-
-                prev_item_count = 0
-                same_count_retries = 0
-
-                logger.info(f'[!] {bot} Scrolling and collecting contacts...')
-                while True:
-                    list_items = contacts_container.find_elements(CONTACT_ITEM__DIV)
-                    for item in list_items:
-                        time.sleep(random.randint(2, 9) / 100)
-
-                        if item.text in seen_items:
-                            continue
-                        seen_items.add(item.text)
-
-                        try:
-                            contact_div = item.find_element(BUTTON_ROLE__DIV)
-                        except (Exception, NoSuchElementException) as e:
-                            logger.debug(f'[ERROR] {bot} scraping contact finding contact_div {e}')
-                            logger.debug(f'[#] {bot} {item.text.replace("\n", " || ")}')
-                            continue
-                        else:
-                            contact_text = contact_div.text.replace('\n', ' || ')
-                            logger.debug(f'[>] {bot} {contact_text}')
-                            if 'Message yourself' in contact_text:
-                                continue
-
-                            data = {}
-                            try:
-                                contact_div.find_element(CONTACT_AVATAR__DEFAULT)
-                                data['user_avatar'] = ''
-                            except (Exception, NoSuchElementException):
-                                try:
-                                    avatar_img = contact_div.find_element(CONTACT_AVATAR__IMG)
-                                    data['user_avatar'] = avatar_img.get_attribute('src')
-                                except (Exception, NoSuchElementException) as e:
-                                    logger.debug(f'[ERROR] {bot} scraping contact avatar {e}')
-                                    data['user_avatar'] = 'unknown'
-
-                            # Name and About
-                            try:
-                                spans = contact_div.find_elements(CONTACT_INFO__SPAN)
-                                if len(spans) >= 1:
-                                    data['name'] = spans[0].get_attribute('title')
-                                if len(spans) >= 2:
-                                    data['about'] = spans[1].get_attribute('title')
-                            except (Exception, NoSuchElementException) as e:
-                                logger.debug(f'[ERROR] {bot} scraping contact info {e}')
-                                data['name'] = data.get('name', '')
-                                data['about'] = data.get('about', '')
-
-                            if data.get('name'):
-                                contacts_data.append(data)
-                                logger.info(f'{bot} [{len(contacts_data):^5}] extracted: {data["name"]}')
-                                append_to_file('extracted_valid_contacts.txt', f'{data}')
-
-                    current_count = len(seen_items)
-                    if current_count == prev_item_count:
-                        same_count_retries += 1
-                    else:
-                        same_count_retries = 0
-
-                    if same_count_retries >= 3:
-                        break
-
-                    prev_item_count = current_count
-                    bot.driver.execute_script('arguments[0].scrollIntoView();', list_items[-1])
-                    time.sleep(random.randint(90, 200) / 100)
-
-                filepath = timestamped_output_path(str(OUTPUT_DIR), 'scraped_valid_whatsapp_contacts', '.csv')
-                write_dicts_to_csv(contacts_data, ['name', 'about', 'user_avatar'], filepath)
-
-                logger.info(f'[!] {bot} Done.')
-            else:
-                logger.error(f'[#] [{bot.id}] Failed to login.')
-
-    @classmethod
-    def extract_chat_list_contacts_by_scraping(cls, args, thread_id: int | str = 1):
-        """Extract WhatsApp chatlist contacts from the chats sidebar by screen-scraping the UI."""
-        with cls(args, headless=args.headless, _id=thread_id) as bot:
-            if bot.login():
-                logger.info(f'[!] {bot} Starting contacts extraction by screen-scraping for Chat list')
-
-                # chat list
-                pane_side_div = bot.driver.find_element(CHAT_LIST_PARENT)
-                chat_list_div = pane_side_div.find_element(CHAT_LIST__DIV)
-
-                seen_items = set()
-                contacts_data = []
-
-                prev_item_count = 0
-                same_count_retries = 0
-
-                logger.info(f'[!] {bot} Scrolling and collecting Chat list contacts...')
-                while True:
-                    list_items = chat_list_div.find_elements(CONTACT_ITEM__DIV)
-                    for item in list_items:
-                        contact_text = item.text.replace('\n', ' || ')
-                        logger.debug(f'{bot} [>] {contact_text}')
-
-                        if contact_text in seen_items:
-                            continue
-
-                        seen_items.add(contact_text)
-
-                        data = {}
-                        # Avatar logic
-                        try:
-                            item.find_element(CONTACT_AVATAR__DEFAULT)
-                            data['user_avatar'] = ''
-                        except (Exception, NoSuchElementException):
-                            try:
-                                avatar_img = item.find_element(CONTACT_AVATAR__IMG)
-                                data['user_avatar'] = avatar_img.get_attribute('src')
-                            except (Exception, NoSuchElementException) as e:
-                                logger.debug(f'[ERROR] {bot} scraping chat list contact avatar {e}')
-                                data['user_avatar'] = 'unknown'
-
-                        # Name and About
-                        try:
-                            spans = item.find_elements(CONTACT_INFO__SPAN)
-                            if len(spans) >= 1:
-                                data['name'] = spans[0].get_attribute('title')
-                            if len(spans) >= 2:
-                                data['about'] = spans[1].get_attribute('title')
-                        except (Exception, NoSuchElementException) as e:
-                            logger.debug(f'[ERROR] {bot} scraping chat list contact info {e}')
-                            data['name'] = data.get('name', '')
-                            data['about'] = data.get('about', '')
-
-                        if data.get('name'):
-                            contacts_data.append(data)
-                            logger.info(f'{bot} [{len(contacts_data):^5}] extracted: {data["name"]}')
-                            append_to_file('extracted_chat_list_contacts.txt', f'{data}')
-
-                    current_count = len(seen_items)
-                    if current_count == prev_item_count:
-                        same_count_retries += 1
-                    else:
-                        same_count_retries = 0
-
-                    if same_count_retries >= 3:
-                        break  # We scrolled 3 times and saw no new content
-
-                    prev_item_count = current_count
-                    bot.driver.execute_script('arguments[0].scrollIntoView();', list_items[-1])
-                    time.sleep(random.randint(150, 250) / 100)
-
-                filepath = timestamped_output_path(str(OUTPUT_DIR), 'scraped_chat_list_contacts', '.csv')
-                write_dicts_to_csv(contacts_data, ['name', 'about', 'user_avatar'], filepath)
-
-                logger.info(f'[!] {bot} Done.')
-            else:
-                logger.error(f'[#] {bot} Failed to login.')
+                logger.error(f'{bot} Failed to login.')
 
     # 3. Initialization helpers
     @timed
@@ -404,6 +198,7 @@ class WhatsAppBot:
 
         if self.headless:
             self.driver.set_window_size(1200, 800)
+            self.driver.maximize_window()
 
         logger.info(f'{self.id} Driver initialized')
         return self.driver
@@ -415,20 +210,6 @@ class WhatsAppBot:
         self.driver.get(self.base_url)
         self.driver.implicitly_wait(30)
 
-        # logger.debug(f'{self} [+] Checking presence of APP__DIV')
-        # if self._wait_for_presence_of_any_element([APP__DIV], 10):
-        #     logger.debug(f'{self} [-] APP__DIV is present')
-        #
-        # logger.debug(f'{self} [+] Checking presence of progress_bar')
-        # if self._wait_for_presence_of_any_element([(By.TAG_NAME, 'progress')], 10):
-        #     logger.debug(f'{self} [-] progress_bar present')
-
-
-        # logger.debug(f'{self} Checking login status')
-        # if self.is_logged_in:
-        #     logger.info(f'{self} Successfully logged into WhatsApp Web using saved session.')
-        #     return True
-        #
         logger.debug(f'{self} Checking if QR Login is presented')
         if self._is_login_page(timeout=20):
             logger.debug(f'{self} QR Login detected. Waiting {timeout} seconds for login...')
@@ -449,22 +230,6 @@ class WhatsAppBot:
             logger.error(f'{self} Failed to login into WhatsApp.')
             return False
 
-        #     else:
-        #         logger.warning(f'{self} Login timed out. Please refresh the page and login manually.')
-        # else:
-        #     logger.warning(f"{self} Login page isn't detected. Something unexpected happened.")
-        #
-        # # Prompt for manual login
-        # logger.warning(f'{self} Please refresh the page and login manually.')
-        # input(f'{self} [>] Press [ENTER] after login')
-        #
-        # if self.is_logged_in:
-        #     logger.info(f'{self} [+] Successfully logged into WhatsApp Web after manual login.')
-        #     return True
-        # else:
-        #     logger.warning(f'{self} [-] Manual login failed. Please try again.')
-        #     return False
-
     @timed
     def quit(self):
         """Quits the WebDriver if it has been initialized."""
@@ -481,8 +246,8 @@ class WhatsAppBot:
                 shutil.rmtree(self.profile_dir)
 
     # 4. Properties
-    @property
     @timed
+    @property
     def is_logged_in(self) -> bool:
         """Check if WhatsApp Web is logged in by looking for the main UI elements."""
         return bool(
@@ -502,7 +267,7 @@ class WhatsAppBot:
 
     # 5. Public API methods (core functionalities)
     @timed
-    def check_number(self, number: str) -> bool | None:
+    def check_number(self, number: str, save_result: bool = True) -> bool | None:
         """Check if a WhatsApp number is active by opening its URL and checking for errors."""
         number = utils.get_digits(number)
 
@@ -512,17 +277,253 @@ class WhatsAppBot:
         # url = f'https://wa.me/{number}'
         url = f'https://web.whatsapp.com/send/?phone={number}&text&type=phone_number'
         self.driver.get(url)
-        self._wait_for_startup_div_to_disappear()
-        self._wait_for_whatsapp_post_login_loading()
+        self._wait_for_whatsapp_loading(timeout=20)
         try:
             time.sleep(1)
-            self.driver.find_element(INVALID_NUMBER__DIV)
+            self.driver.find_element(*INVALID_NUMBER__DIV)
+            logger.info(f'{self} [-] INACTIVE: {number}')
+            if save_result:
+                filename = 'checked_invalid_numbers'
+                filename = timestamped_output_path(str(OUTPUT_DIR), filename, ext='txt', fmt='%Y_%m_%d')
+                append_to_file(str(filename), number)
             return False
         except NoSuchElementException:
+            logger.info(f'{self} [✓] ACTIVE: {number}')
+            if save_result:
+                filename = 'checked_valid_numbers'
+                filename = timestamped_output_path(str(OUTPUT_DIR), filename, ext='txt', fmt='%Y_%m_%d')
+                append_to_file(str(filename), number)
             return True
-        except Exception as e:
-            logger.exception(f'{self.id} Unexpected error checking {number}: {e}')
+        except (Exception, DummyError) as e:
+            logger.info(f'{self} [!] SKIPPED: {number}')
+            if save_result:
+                filename = 'check_skipped_numbers'
+                filename = timestamped_output_path(str(OUTPUT_DIR), filename, ext='txt', fmt='%Y_%m_%d')
+                append_to_file(str(filename), number)
+            logger.exception(f'{self} Unexpected error checking {number}: {e}')
             return None
+
+    @timed
+    def check_numbers(self, numbers: list, base_delay=5, save_result: bool = True) -> dict:
+        """Check a list of WhatsApp numbers for active status."""
+        logger.info(f'{self} Starting checking: {len(numbers)} numbers')
+        results = {}
+        for i, number in enumerate(numbers, 1):
+            logger.info(f'{self} [{i}/{len(numbers)}] Checking: {number}')
+            _r = self.check_number(number, save_result=save_result)
+            results[number] = 'valid' if _r else 'invalid' if _r is False else 'skipped' if _r is None else 'unknown'
+            delay = base_delay + random.randint(0, 10)
+            logger.info(f'{self} Waiting for {delay} seconds')
+            time.sleep(delay)
+
+        logger.info(f'{self} Done checking: {len(numbers)}.')
+        return results
+
+    @timed
+    def export_wa_db(
+        self, db_name: str = 'model-storage', timeout: int = 20, min_size_kb: int = 10, max_attempts: int = 3
+    ) -> float:
+        """Export WhatsApp IndexedDB to a JSON file."""
+        export_size_kb = 0.0
+        logger.info(f'{self} Exporting WhatsApp IndexedDB to {WAMS_DB_PATH}')
+        for i in range(1, max_attempts + 1):
+            logger.info(f'{self} [attempt-{i}] Waiting {timeout} sec to ensure whatsapp db loads properly')
+            time.sleep(timeout)
+
+            try:
+                self.driver.set_script_timeout(120)
+                db_data = self.driver.execute_async_script(INDEXEDDB_EXPORT_SCRIPT, db_name)
+            except (Exception, WebDriverException) as e:
+                logger.error(f'{self} [attempt-{i}] ERROR in execute_async_script: {e}')
+                input(f'{self} [>] Press [ENTER] to continue')
+            else:
+                WAMS_DB_PATH.write_text(json.dumps(db_data, indent=2), encoding='utf-8', newline='')
+                export_size_kb = os.path.getsize(WAMS_DB_PATH) / 1024
+                logger.debug(f'{self} [attempt-{i}] [+] Exported: {db_name} [{export_size_kb:.2f}KB] to:{WAMS_DB_PATH}')
+                if export_size_kb >= min_size_kb:
+                    break
+
+        return export_size_kb
+
+    @timed
+    def extract_contacts_from_wams_db(self):
+        """Extract contacts from WhatsAppWeb IndexedDB."""
+        logger.info(f'{self} Starting contacts extraction from wams db')
+        filename = timestamped_output_path(str(OUTPUT_DIR), 'extracted_contacts', '.csv')
+        extract_contacts_from_json_db(WAMS_DB_PATH, filename)
+
+    @timed
+    def extract_chat_list_from_wams_db(self):
+        """Extract Chat list contacts from WhatsAppWeb IndexedDB."""
+        logger.info(f'{self} Starting Chat list extraction from wams db')
+        filename = timestamped_output_path(str(OUTPUT_DIR), 'extracted_chat_list_contacts', '.csv')
+        extract_chat_list_from_json_db(WAMS_DB_PATH, filename)
+
+    @timed
+    def scrape_contact_list(self):
+        """Extract WhatsApp contacts from the contact list sidebar by screen-scraping the UI."""
+        logger.info(f'{self} Starting contact list scraping')
+        wait = WebDriverWait(self.driver, DEFAULT_WAIT)
+
+        new_chat_btn = wait.until(EC.element_to_be_clickable(NEW_CHAT__BUTTON))
+        new_chat_btn.click()
+        logger.debug(f'{self} Opened the contact list sidebar.')
+
+        # contact list
+        copyable_area = wait.until(EC.presence_of_element_located(CONTACTS_CONTAINER_PARENT__DIV))
+        contacts_container = copyable_area.find_element(*CONTACTS_CONTAINER__DIV)
+
+        seen_items = set()
+        contacts_data = []
+
+        prev_item_count = 0
+        same_count_retries = 0
+
+        logger.info(f'{self} Scrolling and collecting contacts...')
+        while True:
+            list_items = contacts_container.find_elements(*CONTACT_ITEM__DIV)
+            for item in list_items:
+                random_wait = random.randint(2, 9) / 100
+                logger.debug(f'{self} randomly waiting: {random_wait:.2f}s')
+                time.sleep(random_wait)
+
+                if item.text in seen_items:
+                    continue
+                seen_items.add(item.text)
+
+                try:
+                    contact_div = item.find_element(*BUTTON_ROLE__DIV)
+                except (Exception, NoSuchElementException) as e:
+                    logger.debug(f'{self} [x] scraping contact finding contact_div {e}')
+                    logger.debug(f'{self} {item.text.replace("\n", " || ")}')
+                    continue
+                else:
+                    contact_text = contact_div.text.replace('\n', ' || ')
+                    logger.debug(f'{self} [>] {contact_text}')
+                    if 'Message yourself' in contact_text:
+                        continue
+
+                    data = {}
+                    try:
+                        contact_div.find_element(*CONTACT_AVATAR__DEFAULT)
+                        data['user_avatar'] = ''
+                    except (Exception, NoSuchElementException):
+                        try:
+                            avatar_img = contact_div.find_element(*CONTACT_AVATAR__IMG)
+                            data['user_avatar'] = avatar_img.get_attribute('src')
+                        except (Exception, NoSuchElementException) as e:
+                            logger.debug(f'{self} [x] scraping contact avatar: {e}')
+                            data['user_avatar'] = 'unknown'
+
+                    # Name and About
+                    try:
+                        spans = contact_div.find_elements(*CONTACT_INFO__SPAN)
+                        if len(spans) >= 1:
+                            data['name'] = spans[0].get_attribute('title')
+                        if len(spans) >= 2:
+                            data['about'] = spans[1].get_attribute('title')
+                    except (Exception, NoSuchElementException) as e:
+                        logger.debug(f'{self} [x] scraping contact info {e}')
+                        data['name'] = data.get('name', '')
+                        data['about'] = data.get('about', '')
+
+                    if data.get('name'):
+                        contacts_data.append(data)
+                        logger.info(f'{self} [{len(contacts_data):^3}] extracted: {data["name"]}')
+                        append_to_file('extracted_valid_contacts.txt', f'{data}')
+
+            current_count = len(seen_items)
+            if current_count == prev_item_count:
+                same_count_retries += 1
+            else:
+                same_count_retries = 0
+
+            if same_count_retries >= 3:
+                break
+
+            prev_item_count = current_count
+            self.driver.execute_script('arguments[0].scrollIntoView();', list_items[-1])
+            time.sleep(random.randint(90, 200) / 100)
+
+        filepath = timestamped_output_path(str(OUTPUT_DIR), 'scraped_valid_whatsapp_contacts', '.csv')
+        write_dicts_to_csv(contacts_data, ['name', 'about', 'user_avatar'], filepath)
+
+        logger.info(f'{self} Done scraping contact list.')
+
+    @timed
+    def scrape_chat_list_contacts(self):
+        """Extract WhatsApp chatlist contacts from the chats sidebar by screen-scraping the UI."""
+        logger.info(f'{self} Starting Chat list scraping')
+
+        # chat list
+        pane_side_div = self.driver.find_element(*CHAT_LIST_PARENT)
+        chat_list_div = pane_side_div.find_element(*CHAT_LIST__DIV)
+
+        seen_items = set()
+        contacts_data = []
+
+        prev_item_count = 0
+        same_count_retries = 0
+
+        logger.info(f'{self} Scrolling and collecting Chat list contacts...')
+        while True:
+            list_items = chat_list_div.find_elements(*CONTACT_ITEM__DIV)
+            for item in list_items:
+                contact_text = item.text.replace('\n', ' || ')
+                logger.debug(f'{self} [>] {contact_text}')
+
+                if contact_text in seen_items:
+                    continue
+
+                seen_items.add(contact_text)
+
+                data = {}
+                # Avatar logic
+                try:
+                    item.find_element(*CONTACT_AVATAR__DEFAULT)
+                    data['user_avatar'] = ''
+                except (Exception, NoSuchElementException):
+                    try:
+                        avatar_img = item.find_element(*CONTACT_AVATAR__IMG)
+                        data['user_avatar'] = avatar_img.get_attribute('src')
+                    except (Exception, NoSuchElementException) as e:
+                        logger.debug(f'{self} [x] scraping chat list contact avatar: {e}')
+                        data['user_avatar'] = 'unknown'
+
+                # Name and About
+                try:
+                    spans = item.find_elements(*CONTACT_INFO__SPAN)
+                    if len(spans) >= 1:
+                        data['name'] = spans[0].get_attribute('title')
+                    if len(spans) >= 2:
+                        data['about'] = spans[1].get_attribute('title')
+                except (Exception, NoSuchElementException) as e:
+                    logger.debug(f'{self} [x] scraping chat list contact info {e}')
+                    data['name'] = data.get('name', '')
+                    data['about'] = data.get('about', '')
+
+                if data.get('name'):
+                    contacts_data.append(data)
+                    logger.info(f'{self} [{len(contacts_data):^3}] extracted: {data["name"]}')
+                    append_to_file('extracted_chat_list_contacts.txt', f'{data}')
+
+            current_count = len(seen_items)
+            if current_count == prev_item_count:
+                same_count_retries += 1
+            else:
+                same_count_retries = 0
+
+            if same_count_retries >= 3:
+                break  # We scrolled 3 times and saw no new content
+
+            prev_item_count = current_count
+            self.driver.execute_script('arguments[0].scrollIntoView();', list_items[-1])
+            time.sleep(random.randint(150, 250) / 100)
+
+        filepath = timestamped_output_path(str(OUTPUT_DIR), 'scraped_chat_list_contacts', '.csv')
+        write_dicts_to_csv(contacts_data, ['name', 'about', 'user_avatar'], filepath)
+
+        logger.info(f'{self} Done scraping Chat list contacts.')
 
     # 6. Private/helper methods
     @timed
@@ -542,7 +543,7 @@ class WhatsAppBot:
             )
         except (TimeoutException, NoSuchElementException, WebDriverException):
             return None
-        except Exception as e:
+        except (Exception, DummyError) as e:
             logger.debug(f'Unexpected exception occurred while waiting for element: {e}')
             return None
         else:
@@ -613,20 +614,12 @@ class WhatsAppBot:
             try:
                 app_div = _driver.find_element(*APP__DIV)
                 app_div_text = app_div.text
-                logger.debug(f'{self} {len(app_div.text)} {app_div_text}')
+                # logger.debug(f'{self} {len(app_div.text)} {app_div_text}')
                 _loading = any(text in app_div_text for text in LOADING__TEXTS)
             except (Exception, NoSuchElementException):
                 _loading = True  # Assume loading if #app not found
 
-            # try:
-            #     progress_el = _driver.find_element(By.TAG_NAME, 'progress')
-            #     value = progress_el.get_attribute('value')
-            #     logger.info(f'{self} [~] Loading... {value}%')
-            #     loading_progress = True
-            # except (Exception, NoSuchElementException):
-            #     loading_progress = False # No <progress> means it's done
-
-            return _loading # or loading_progress
+            return _loading
 
         try:
             wait.until_not(still_loading)
@@ -643,39 +636,6 @@ class WhatsAppBot:
         app_div_text = app_div_text.lower()
         login_page_texts = ['Log into WhatsApp Web', 'scan the QR code', 'Log in with phone number']
         return any(s.lower() in app_div_text for s in login_page_texts)
-
-        # return bool(
-        #     self._wait_for_presence_of_any_element(
-        #         [LOGIN_QR_CODE__DIV, LOG_INTO_WA_WEB__TEXT, LOGIN_QR_SCAN_ME__CANVAS], timeout
-        #     )
-        # )
-
-    @timed
-    def _export_wams_db(self) -> float:
-        """Export WhatsApp IndexedDB to a JSON file."""
-        export_size_kb = 0.0
-        if self.is_logged_in:
-            logger.info(f'{self} Waiting 30 sec to properly load whatsapp db')
-            time.sleep(30)
-
-            db_name = 'model-storage'
-            try:
-                self.driver.set_script_timeout(120)
-                db_data = self.driver.execute_async_script(INDEXEDDB_EXPORT_SCRIPT, db_name)
-            except (Exception, WebDriverException) as e:
-                logger.error(f'{self} ERROR in execute_async_script: {e}')
-                input(f'{self} [>] Press [ENTER] to continue')
-            else:
-                # check if there is actually any data in export, if not, wait and try again
-                WAMS_DB_PATH.write_text(json.dumps(db_data, indent=2), encoding='utf-8', newline='')
-                export_size_bytes = os.path.getsize(WAMS_DB_PATH)
-                if export_size_bytes:
-                    export_size_kb = export_size_bytes / 1024
-                logger.debug(f'{self} [+] Exported: {db_name} [{export_size_kb:.2f} KB] to {WAMS_DB_PATH}')
-        else:
-            logger.warning(f'{self} [~] Not logged in. Skipping export.')
-
-        return export_size_kb
 
 
 def ensure_deps() -> None:
@@ -716,6 +676,12 @@ def ensure_deps() -> None:
         logger.info('[ > ] Installing selenium...')
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'selenium'])
 
+    try:
+        from faker import Faker  # noqa: F401
+    except ImportError:
+        logger.info('[ > ] Installing faker...')
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'faker'])
+
 
 # noinspection PyUnresolvedReferences
 def import_deps() -> None:
@@ -750,11 +716,12 @@ def parse_args():
     parser.add_argument(
         '--mode', '-m',
         default='web-db',
-        choices=['web-db', 'web-scrape', 'emulator'],
-        help="""Execution Mode: web-db/web-scrape/emulator
+        choices=['web-db', 'web-scrape', 'emulator', 'all'],
+        help="""Extraction execution Mode: web-db/web-scrape/emulator
         web-db:         Extract WhatsApp contact numbers from WhatsApp Web IndexedDB
         web-scrape:     Extract WhatsApp contact numbers from WhatsApp Web by screen scraping
-        emulator:       Extract WhatsApp contact numbers using an android emulator""",
+        emulator:       Extract WhatsApp contact numbers using an android emulator
+        all:            Extract all data using both web-db and web-scrape method""",
     )
     parser.add_argument(
         '--input-file', '--input', '-i', help='Input file with phone numbers (one per line)'
@@ -786,6 +753,15 @@ def parse_args():
     parser.add_argument(
         '--generate-vcf', '--generate-vcf-batch',
         action='store_true', default=False,  help='Generate vcf files of specified batch-size',
+    )
+    parser.add_argument(
+        '--contact-list', '--contacts', action='store_true', default=True, help='Process chat list too.'
+    )
+    parser.add_argument(
+        '--chat-list', '--chatlist', '--chat', action='store_true', default=False, help='Process chat list too.'
+    )
+    parser.add_argument(
+        '--db-name', '--wadb-name', '--wadb', '--db', type=str, default='model-storage', help='Process chat list too.'
     )
     parser.add_argument(
         '--headless', action='store_true', default=False, help='Run browser in headless mode'
@@ -879,44 +855,27 @@ def main():
         constants.VCF_DIR.mkdir(parents=True, exist_ok=True)
         generate_vcf_batches(args.input_file, args.batch_size)
 
-    if args.extract:
+    if args.extract or args.check:
         num_threads = len(args.accounts)
         proxy_list = args.proxies or [None] * num_threads
+        if args.check:
+            numbers = read_numbers_from_txt(args.input_file)
+            number_chunks = chunk_list(numbers, num_threads)
+            logger.info(f'[ + ] Checking {len(numbers)} numbers for WhatsApp users...')
+        else:
+            number_chunks = [[]] * num_threads
 
-        logger.info(f'[ > ] Launching {num_threads} threads for contacts extraction...')
-
-        with ThreadPoolExecutor(max_workers=num_threads) as executor:
-            for i, account in enumerate(args.accounts):
-                proxy = proxy_list[i] if i < len(proxy_list) else None
-                args_copy = copy.deepcopy(args)
-                args_copy.proxy = proxy
-                args_copy.proxies = [proxy]
-                args_copy.accounts = [account]
-                args_copy.profile_dir = account
-                if args.mode in ['web-scrape']:
-                    executor.submit(WhatsAppBot.extract_contacts_by_scraping, args_copy, i + 1)
-                elif args.mode in ['web-db']:
-                    executor.submit(WhatsAppBot.extract_contacts_from_wams_db, args_copy, i + 1)
-                else:
-                    logger.error(f'Unsupported mode: {args.mode}')
-
-    if args.check:
-        numbers = read_numbers_from_txt(args.input_file)
-        logger.info(f'[ + ] Checking {len(numbers)} numbers for WhatsApp users...')
-        num_threads = len(args.accounts)
-        proxy_list = args.proxies or [None] * num_threads
-        number_chunks = chunk_list(numbers, num_threads)
-
+        logger.info(f'[ > ] Launching {num_threads} threads.')
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
             for i, (account, chunk) in enumerate(zip(args.accounts, number_chunks, strict=False)):
                 proxy = proxy_list[i] if i < len(proxy_list) else None
                 args_copy = copy.deepcopy(args)
                 args_copy.proxy = proxy
+                args_copy.numbers = chunk
                 args_copy.proxies = [proxy]
                 args_copy.accounts = [account]
                 args_copy.profile_dir = account
-                logger.info(f'[ + ] Launching thread: {i + 1} threads for checking {len(chunk)} numbers...')
-                executor.submit(WhatsAppBot.check_numbers, chunk, args_copy, i + 1)
+                executor.submit(WhatsAppBot.run, args_copy, i + 1)
 
 
 if __name__ == '__main__':

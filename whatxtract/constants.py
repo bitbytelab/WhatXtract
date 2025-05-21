@@ -13,7 +13,7 @@ except ImportError:
     from selenium.webdriver.common.by import By
 
 
-DEFAULT_WAIT                = 30
+DEFAULT_WAIT                = 20
 VCF_BATCH_SIZE              = 5000
 
 PROFILE_DIR                 = Path.cwd() / 'WAProfiles'
