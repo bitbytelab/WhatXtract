@@ -13,7 +13,7 @@ Email  : rrss.mahmud@gmail.com
 # fmt: off
 __title__       = 'whatxtract'
 __description__ = 'A WhatsApp data extraction and automation toolkit'
-__version__     = '0.1.0'
+__version__     = '0.1.1'
 __author__      = 'Hasan Rasel'
 __email__       = 'rrss.mahmud@gmail.com'
 __license__     = 'MIT'

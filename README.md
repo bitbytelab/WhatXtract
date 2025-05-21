@@ -23,11 +23,12 @@
   </p>
 
   <p>
-    <!--- <img src="https://img.shields.io/github/v/release/bitbytelab/whatxtract?style=flat-square" alt="GitHub Release Badge" /> --->
+    <img src="https://img.shields.io/github/tag-version/bitbytelab/?style=flat-square" alt="GitHub Release Badge" />
     <img src="https://img.shields.io/badge/license-MIT-red?style=flat-square" alt="License Badge" />
-    <img src="https://img.shields.io/pypi/pyversions/py312?style=flat-square" alt="Python Version" />
+    <img src="https://img.shields.io/pypi/pyversions/whatxtract?style=flat-square" alt="Python Version" />
     <img src="https://img.shields.io/badge/status-Beta-orange?style=flat-square" alt="Project Status" />
-    <img src="https://img.shields.io/pypi/dm/whatxtract?style=flat-square" alt="PyPI Downloads" />
+    <img src="https://img.shields.io/pypi/v/whatxtract?style=flat-square" alt="PyPI Version" />
+    <img src="https://img.shields.io/pypistats/monthly/whatxtract?style=flat-square" alt="PyPI Downloads" />
     <img src="https://img.shields.io/github/languages/top/bitbytelab/whatxtract?style=flat-square" alt="Top Language" />
     <a href="https://github.com/astral-sh/ruff">
       <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff Code Quality" />
