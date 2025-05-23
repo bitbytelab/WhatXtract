@@ -803,7 +803,9 @@ def parse_args():
         args.generate_vcf = True
 
     if args.action in ['c', 'chk', 'check', 'v', 'vcf', 'vcf-batch', 'generate-vcf', 'generate-vcf-batch']:
-        args.input_file = get_config_or_prompt('input_file', 'Enter path to input file: ')
+        args.input_file = get_config_or_prompt(
+            'input_file', 'Enter Input file path with phone numbers (one per line): '
+        )
         if not args.input_file:
             logger.error('Input file is required for this action.')
             sys.exit(1)
