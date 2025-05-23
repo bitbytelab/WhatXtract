@@ -5,7 +5,7 @@ WhatsApp Contacts Extractor and Number Checker via WhatsApp Web
 A WhatsApp data extraction and automation toolkit
 
 License: MIT
-Version: 0.1.0
+Version: 0.1.2
 Author : Hasan Rasel
 Email  : rrss.mahmud@gmail.com
 """
@@ -13,7 +13,7 @@ Email  : rrss.mahmud@gmail.com
 # fmt: off
 __title__       = 'whatxtract'
 __description__ = 'A WhatsApp data extraction and automation toolkit'
-__version__     = '0.1.1'
+__version__     = '0.1.2'
 __author__      = 'Hasan Rasel'
 __email__       = 'rrss.mahmud@gmail.com'
 __license__     = 'MIT'
