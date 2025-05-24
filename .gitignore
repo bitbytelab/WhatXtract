@@ -70,6 +70,8 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/build/
+docs/**/_build/
 
 # PyBuilder
 .pybuilder/
@@ -172,10 +174,6 @@ cython_debug/
 
 # Additonal
 /local/
-/local/*
-/whatxtract/WAProfiles/
-/whatxtract/.last_dep_check
-/whatxtract/whatxtract_logs/
-/whatxtract/logs/
-/whatxtract/output/
-
+/logs/
+/output/
+/WAProfiles/
