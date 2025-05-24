@@ -15,10 +15,10 @@ author = 'Hasan Rasel'
 
 # Extensions
 extensions = [
-    'sphinx.ext.autodoc',       # pulls in docstrings
-    'sphinx.ext.napoleon',      # parses Google/NumPy style
-    'sphinx.ext.viewcode',      # adds [source] links
-    'sphinx.ext.autosummary',   # optional: for summary tables
+    'sphinx.ext.autodoc',  # pulls in docstrings
+    'sphinx.ext.napoleon',  # parses Google/NumPy style
+    'sphinx.ext.viewcode',  # adds [source] links
+    'sphinx.ext.autosummary',  # optional: for summary tables
 ]
 
 templates_path = ['_templates']
@@ -32,5 +32,5 @@ napoleon_numpy_docstring = False
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'alabaster' # 'sphinx_rtd_theme'
+html_theme = 'alabaster'  # 'sphinx_rtd_theme'
 html_static_path = ['_static']

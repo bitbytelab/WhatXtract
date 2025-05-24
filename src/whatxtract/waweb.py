@@ -30,8 +30,8 @@ else:
 from whatxtract import utils, constants
 from whatxtract.utils import (
     DotDict,
-    DummyError,
     timed,
+    banner,
     chunk_list,
     get_digits,
     append_to_file,
@@ -294,7 +294,7 @@ class WhatsAppBot:
                 filename = timestamped_output_path(str(OUTPUT_DIR), filename, ext='txt', fmt='%Y_%m_%d')
                 append_to_file(str(filename), number)
             return True
-        except (Exception, DummyError) as e:
+        except (Exception,) as e:
             logger.info(f'{self} [!] SKIPPED: {number}')
             if save_result:
                 filename = 'check_skipped_numbers'
@@ -543,7 +543,7 @@ class WhatsAppBot:
             )
         except (TimeoutException, NoSuchElementException, WebDriverException):
             return None
-        except (Exception, DummyError) as e:
+        except (Exception,) as e:
             logger.debug(f'Unexpected exception occurred while waiting for element: {e}')
             return None
         else:
@@ -769,6 +769,9 @@ def parse_args():
     parser.add_argument(
         '--verbose', '-v', action='store_true', default=False, help='Run in verbose mode (LogLevel=DBUG)'
     )
+    parser.add_argument(
+        '-V', '--version', action='store_true', default=False, help='Display version information'
+    )
     # fmt: on
     args = parser.parse_args()
     if args.verbose:
@@ -793,7 +796,9 @@ def parse_args():
     constants.PROFILE_DIR = Path(args.profile_dir)
     constants.VCF_BATCH_SIZE = args.batch_size
 
-    if args.action in ['a', 'add', 'add-account']:
+    if args.version:
+        banner()
+    elif args.action in ['a', 'add', 'add-account']:
         args.add_account = True
     elif args.action in ['c', 'chk', 'check']:
         args.check = True
@@ -882,6 +887,8 @@ def main():
 
 if __name__ == '__main__':
     try:
+        os.system('cls' if os.name == 'nt' else 'clear')
+        banner()
         main()
     except KeyboardInterrupt:
         logger.info('\nInterrupted by user (Ctrl+C). Exiting gracefully.')

@@ -3,7 +3,7 @@
 
 import sys
 
-from whatxtract.wa_web import main
+from whatxtract.waweb import main
 
 try:
     main()

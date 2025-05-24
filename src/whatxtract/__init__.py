@@ -11,7 +11,6 @@ __ = {}
 
 try:
     __ = importlib.metadata.metadata(__name__)
-    for key in __.keys(): print(key, ':', __[key])  # noqa: SIM118, T201, E701, RUF100
     __version__ = importlib.metadata.version(__name__)
 except importlib.metadata.PackageNotFoundError:
     __version__ = '0.0.0'  # Fallback for development mode

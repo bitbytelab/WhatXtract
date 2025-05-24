@@ -1,5 +1,5 @@
 [build-system]
-requires = ["sphinx", "hatchling", "uv-dynamic-versioning"]
+requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
 
 [project]
@@ -24,8 +24,6 @@ classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Topic :: Communications :: Chat",
@@ -39,17 +37,13 @@ dependencies = [
   "colorlog",
   "selenium",
   "undetected-chromedriver",
-  "sphinx>=8.1.3",
-  "sphinx-rtd-theme>=3.0.2",
-  "sphinxcontrib-napoleon>=0.7",
-  "myst-parser>=4.0.1",
 ]
 authors = [
     { name = "Hasan Rasel", email = "rrss.mahmud@gmail.com" },
 ]
 
 [project.scripts]
-whatxtract = "whatxtract.wa_web:main"
+whatxtract = "whatxtract.waweb:main"
 
 [project.urls]
 Homepage = "https://github.com/bitbytelab/whatxtract"

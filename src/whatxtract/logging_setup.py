@@ -47,7 +47,7 @@ class PrefixedFormatter(logging.Formatter):
 
     def format(self, record):
         """Formats the log message with a prefix."""
-        _apply_prefix(record)
+        record = _apply_prefix(record)
         return super().format(record)
 
 
@@ -72,7 +72,7 @@ def _is_writable(path: Path) -> bool:
             with open(path, 'a'):
                 pass
         return True
-    except (Exception, Exception('_')):
+    except (Exception,):
         return False
 
 
@@ -116,7 +116,7 @@ def setup_logger(name: str = __package__ or 'whatxtract') -> logging.Logger:
             if _is_writable(candidate_dir):
                 log_dir = candidate_dir
                 break
-        except (Exception, Exception('_')):
+        except (Exception,):
             continue
 
     if log_dir:
@@ -140,14 +140,14 @@ _original_print = builtins.print
 
 def _logged_print(*args, **kwargs):
     """Overrides print to also log output if enabled."""
-    _original_print(*args, **kwargs)
-
     if PRINT_LOGGING_ENABLED:
         try:
             message = ' '.join(str(arg) for arg in args)
             logger.info(message)
-        except (Exception, Exception('_')):
+        except (Exception,):
             pass
+    else:
+        _original_print(*args, **kwargs)
 
 
 # Replace built-in print globally

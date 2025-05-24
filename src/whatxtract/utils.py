@@ -5,6 +5,7 @@ import csv
 import sys
 import json
 import time
+import shutil
 from typing import Any
 from pathlib import Path
 from datetime import datetime
@@ -12,6 +13,7 @@ from functools import wraps
 
 from faker import Faker
 
+from whatxtract import __author__, __project__, __version__, __copyright__, __description__
 from whatxtract.constants import VCF_DIR, OUTPUT_DIR, VCF_TEMPLATE, WAMS_DB_PATH, VCF_BATCH_SIZE
 from whatxtract.logging_setup import logger
 
@@ -35,10 +37,23 @@ class DotDict(dict):
             raise AttributeError(f'No such attribute: {key}') from Exception
 
 
-class DummyError(Exception):
-    """Used only to trick linters, never raised."""
+def banner() -> None:
+    """Print the banner."""
+    terminal_size = shutil.get_terminal_size(fallback=(80, 24))
 
-    pass
+    w = min(terminal_size.columns, 80) - 2
+
+    print(
+        '\n'  # noqa: T201, RUF100
+        f'+{"~":{"~"}^{w}}+\n'
+        f'|{__project__ + " by BitByteLab":{" "}^{w}}|\n'
+        f'|{__description__:{" "}^{w}}|\n'
+        f'+{"-":{"-"}^{w}}+\n'
+        f'|{"Version: " + __version__:{" "}^{w}}|\n'
+        f'|{"Developer: " + __author__:{" "}^{w}}|\n'
+        f'|{"Copyright © " + __copyright__:{" "}^{w}}|\n'
+        f'+{"~":{"~"}^{w}}+\n\n'
+    )
 
 
 def timed(func):

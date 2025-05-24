@@ -33,7 +33,7 @@ select = [                                 # Lint rule groups to enable
   "RUF",    # ruff-native rules: performance, cleanup
 ]
 ignore = [                                 # Specific rules to ignore
-  # "B013", # redundant-tuple-in-exception-handler
+  "B013",   # redundant-tuple-in-exception-handler
   "D105",   # Ignore missing docstring in magic methods
   "D205",   # Ignore blank line requirement in docstrings
   "D212",   # Ignore summary line location rule in multi-line docstrings
