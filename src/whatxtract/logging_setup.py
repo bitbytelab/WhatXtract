@@ -1,8 +1,9 @@
-"""Logging setup for the whatxtract package."""
+"""Logging setup for the package."""
 
 import sys
 import logging
 import builtins
+from typing import Any
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
 
@@ -11,33 +12,33 @@ try:
 except ImportError:
     import subprocess
 
-    print('[*] Installing colorlog...')
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'colorlog'])
+    print("[*] Installing colorlog...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "colorlog"])  # noqa: S603
     from colorlog import ColoredFormatter
 
 
 # Configuration
 LOG_LEVEL = logging.INFO
-LOG_FORMAT = '%(asctime)s [%(short_levelname)s] %(message)s'
+LOG_FORMAT = "%(asctime)s [%(short_levelname)s] %(message)s"
 
 # Global toggle for print logging
 PRINT_LOGGING_ENABLED = True
 
 
-def _apply_prefix(record):
+def _apply_prefix(record: logging.LogRecord) -> logging.LogRecord:
     """Applies a prefix to log messages based on their log level."""
-    msg = f'{record.msg}'
-    if not msg.startswith('['):
+    msg = f"{record.msg}"
+    if not msg.startswith("["):
         if record.levelno == logging.INFO:
-            record.msg = f'[ ! ] {msg}'
+            record.msg = f"[ ! ] {msg}"
         elif record.levelno == logging.DEBUG:
-            record.msg = f'[ ~ ] {msg}'
+            record.msg = f"[ ~ ] {msg}"
         elif record.levelno == logging.ERROR:
-            record.msg = f'[ x ] {msg}'
+            record.msg = f"[ x ] {msg}"
         elif record.levelno == logging.WARNING:
-            record.msg = f'[ ! ] {msg}'
+            record.msg = f"[ ! ] {msg}"
         elif record.levelno == logging.CRITICAL:
-            record.msg = f'[!!!] {msg}'
+            record.msg = f"[!!!] {msg}"
     record.short_levelname = record.levelname[0]
     return record
 
@@ -45,38 +46,36 @@ def _apply_prefix(record):
 class PrefixedFormatter(logging.Formatter):
     """Adds a prefix to log messages."""
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         """Formats the log message with a prefix."""
-        record = _apply_prefix(record)
-        return super().format(record)
+        return super().format(_apply_prefix(record))
 
 
 class PrefixedColorFormatter(ColoredFormatter):
     """Adds a prefix to log messages and uses colored output."""
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         """Formats the log message with a prefix and colored output."""
-        _apply_prefix(record)
-        return super().format(record)
+        return super().format(_apply_prefix(record))
 
 
 def _is_writable(path: Path) -> bool:
     """Check if the path is writable (directory or existing file)."""
     try:
         if path.is_dir():
-            test_file = path / '.write_test'
-            with open(test_file, 'w') as f:
-                f.write('test')
+            test_file = path / ".write_test"
+            test_file.touch()
             test_file.unlink()
-        else:
-            with open(path, 'a'):
+        elif path.is_file():
+            with path.open("a"):
                 pass
-        return True
     except (Exception,):
         return False
+    else:
+        return True
 
 
-def setup_logger(name: str = __package__ or 'whatxtract') -> logging.Logger:
+def setup_logger(name: str = __package__ or "whatxtract") -> logging.Logger:
     """Sets up and returns a logger instance with console and rotating file handlers."""
     _logger = logging.getLogger(name)
     _logger.setLevel(LOG_LEVEL)
@@ -85,18 +84,20 @@ def setup_logger(name: str = __package__ or 'whatxtract') -> logging.Logger:
         return _logger  # already set up
 
     file_formatter = PrefixedFormatter(LOG_FORMAT)
-
+    color_formatter = PrefixedColorFormatter("%(log_color)s" + LOG_FORMAT)
+    """
     color_formatter = PrefixedColorFormatter(
-        '%(log_color)s' + LOG_FORMAT,
-        datefmt='%Y-%m-%d %H:%M:%S',
+        "%(log_color)s" + LOG_FORMAT,
+        datefmt="%Y-%m-%d %H:%M:%S",
         log_colors={
-            'DEBUG': 'cyan',
-            'INFO': 'green',
-            'WARNING': 'yellow',
-            'ERROR': 'red',
-            'CRITICAL': 'bold_red',
+            "DEBUG": "cyan",
+            "INFO": "green",
+            "WARNING": "yellow",
+            "ERROR": "red",
+            "CRITICAL": "bold_red",
         },
     )
+    """
 
     # Console handler
     stream_handler = logging.StreamHandler(sys.__stdout__)
@@ -105,8 +106,8 @@ def setup_logger(name: str = __package__ or 'whatxtract') -> logging.Logger:
 
     # Try CWD logs dir first
     log_dirs = [
-        Path.cwd() / 'logs',
-        Path.home() / 'whatxtract_logs',
+        Path.cwd() / "logs",
+        Path.home() / f"{name}_logs",
     ]
 
     log_dir = None
@@ -116,38 +117,40 @@ def setup_logger(name: str = __package__ or 'whatxtract') -> logging.Logger:
             if _is_writable(candidate_dir):
                 log_dir = candidate_dir
                 break
-        except (Exception,):
-            continue
+        except (Exception,) as e:
+            _ = f"Could not create log directory: {e}"
+            _logger.debug(_)
 
     if log_dir:
-        log_file = log_dir / f'{name}.log'
+        log_file = log_dir / f"{name}.log"
         try:
             rotating_handler = RotatingFileHandler(log_file, maxBytes=5 * 1024 * 1024, backupCount=3)
             rotating_handler.setFormatter(file_formatter)
             _logger.addHandler(rotating_handler)
         except PermissionError:
-            _logger.warning('Log file handler disabled: No writable directory found, logging to console only.')
+            _logger.warning("Log file handler disabled: No writable directory found, logging to console only.")
 
     return _logger
 
 
 # Global logger instance
-logger = setup_logger(__package__ or 'whatxtract')
+logger = setup_logger(__package__ or "whatxtract")
 
 # Preserve the original print
 _original_print = builtins.print
 
 
-def _logged_print(*args, **kwargs):
+def _logged_print(*args: Any, **kwargs: Any) -> None:
     """Overrides print to also log output if enabled."""
     if PRINT_LOGGING_ENABLED:
         try:
-            message = ' '.join(str(arg) for arg in args)
+            message = " ".join(str(arg) for arg in args)
             logger.info(message)
-        except (Exception,):
-            pass
-    else:
-        _original_print(*args, **kwargs)
+        except (Exception,) as e:
+            _ = f"Error logging prints: {e}"
+            return logger.debug(_)
+
+    return _original_print(*args, **kwargs)
 
 
 # Replace built-in print globally

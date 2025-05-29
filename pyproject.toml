@@ -49,8 +49,17 @@ whatxtract = "whatxtract.waweb:main"
 Homepage = "https://github.com/bitbytelab/whatxtract"
 Issues = "https://github.com/bitbytelab/whatxtract/issues"
 
-# [tool.setuptools]
-# packages = ["whatxtract"]
+[project.optional-dependencies]
+dev = [
+  "hatchling",
+  "uv-dynamic-versioning"
+]
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
+
+# [tool.setuptools]
+# packages = ["whatxtract"]
+
+# [tool.uv.version]
+# source = "scm"
