@@ -55,11 +55,24 @@ dev = [
   "uv-dynamic-versioning"
 ]
 
+[tool.hatch.build]
+exclude = [
+  "/.*",
+  "/dist",
+  "/docs",
+  "/tests",
+  "/local",
+  "/logs",
+  "/output",
+  "/WAProfiles",
+  ".gitignore",
+  ".last_dep_check",
+  ".readthedocs.yaml",
+  "inject_tree.py",
+  "NOTES.md",
+  "README_bak.md",
+  "ruff.toml"
+]
+
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
-
-# [tool.setuptools]
-# packages = ["whatxtract"]
-
-# [tool.uv.version]
-# source = "scm"

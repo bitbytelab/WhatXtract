@@ -123,6 +123,8 @@ def setup_logger(name: str = __package__ or "whatxtract") -> logging.Logger:
 
     if log_dir:
         log_file = log_dir / f"{name}.log"
+        if log_file.is_dir():
+            log_file.rmdir()
         try:
             rotating_handler = RotatingFileHandler(log_file, maxBytes=5 * 1024 * 1024, backupCount=3)
             rotating_handler.setFormatter(file_formatter)

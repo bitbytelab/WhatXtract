@@ -395,7 +395,7 @@ class WhatsAppBot:
                     contact_div = item.find_element(*BUTTON_ROLE__DIV)
                 except (Exception, NoSuchElementException) as e:
                     logger.debug(f'{self} [x] scraping contact finding contact_div {e}')
-                    logger.debug(f'{self} {item.text.replace("\n", " || ")}')
+                    logger.debug(f'{self}'+item.text.replace("\n", " || "))
                     continue
                 else:
                     contact_text = contact_div.text.replace('\n', ' || ')
@@ -702,10 +702,10 @@ def parse_args():
         '--action', '-a',
         default='extract',
         choices=[
-            'a', 'add', 'add-account',
-            'e', 'ex', 'extract',
-            'c', 'chk', 'check',
-            'v', 'vcf', 'vcf-batch', 'generate-vcf', 'generate-vcf-batch',
+            'add', 'add-account',
+            'ex', 'extract',
+            'chk', 'check',
+            'vcf', 'vcf-batch', 'generate-vcf',
         ],
         help="""Action: add-account/extract/check/vcf
         add-account:    Add new WhatsApp account(s) via QR login
@@ -745,7 +745,7 @@ def parse_args():
         '--add-account', action='store_true', default=False, help='Add new WhatsApp account(s) via QR login'
     )
     parser.add_argument(
-        '--check', action='store_true', help='Check if numbers from input-file are valid WhatsApp users'
+        '--check', action='store_true', default=False, help='Check if numbers from input-file are valid WhatsApp users'
     )
     parser.add_argument(
         '--extract', action='store_true', default=False, help='Extract valid WhatsApp contact numbers from WhatsApp Web'
@@ -798,16 +798,16 @@ def parse_args():
 
     if args.version:
         banner()
-    elif args.action in ['a', 'add', 'add-account']:
+    elif args.action in ['add', 'add-account']:
         args.add_account = True
-    elif args.action in ['c', 'chk', 'check']:
+    elif args.action in ['chk', 'check']:
         args.check = True
-    elif args.action in ['e', 'ex', 'extract']:
+    elif args.action in ['ex', 'extract']:
         args.extract = True
-    elif args.action in ['v', 'vcf', 'vcf-batch', 'generate-vcf', 'generate-vcf-batch']:
+    elif args.action in ['vcf', 'vcf-batch', 'generate-vcf']:
         args.generate_vcf = True
 
-    if args.action in ['c', 'chk', 'check', 'v', 'vcf', 'vcf-batch', 'generate-vcf', 'generate-vcf-batch']:
+    if args.action in ['chk', 'check', 'vcf', 'vcf-batch', 'generate-vcf']:
         args.input_file = get_config_or_prompt(
             'input_file', 'Enter Input file path with phone numbers (one per line): '
         )
@@ -818,7 +818,7 @@ def parse_args():
             logger.error('Input file does not exist.')
             sys.exit(1)
 
-    if args.action in ['a', 'add', 'add-account', 'c', 'chk', 'check', 'e', 'ex', 'extract']:
+    if args.action in ['add', 'add-account', 'c', 'chk', 'check', 'e', 'ex', 'extract']:
 
         def get_next_account_dir(base_dir=PROFILE_DIR, _i: int = 1) -> Path:
             while (base_dir / f'account{_i}').exists():
