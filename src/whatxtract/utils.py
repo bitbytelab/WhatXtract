@@ -278,10 +278,10 @@ def generate_vcf_batches(input_file: str, batch_size: int = VCF_BATCH_SIZE) -> l
     generated_files = []
     chunks = chunk_list(numbers, batch_size)
     for i, chunk in enumerate(chunks, start=1):
-        fn = fake.first_name()
-        ln = fake.last_name()
         vcf_content = ''
         for number in chunk:
+            fn = fake.first_name()
+            ln = fake.last_name()
             vcf_content += VCF_TEMPLATE.format(
                 first=fn,
                 last=ln,
